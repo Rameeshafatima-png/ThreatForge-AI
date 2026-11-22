@@ -1,0 +1,7 @@
+__pycache__/
+.venv/
+.env
+.next/
+node_modules/
+.vscode/
+.vercel/
