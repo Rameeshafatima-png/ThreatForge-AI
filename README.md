@@ -189,31 +189,33 @@ ThreatForge uses environment variables to configure frontend connectivity and ba
 Create `frontend/.env.local`:
 
 ```env
-NEXT_PUBLIC_API_BASE_URL=http://localhost:8000
+NEXT_PUBLIC_API_URL=http://localhost:8000
 ```
 
 For production, replace the value with the deployed backend URL.
 
 ### Backend
 
-Create `backend/.env`:
+Copy `backend/.env.example` to `.env` in the repository root:
 
 ```env
 CORS_ALLOWED_ORIGINS=http://localhost:3000,http://127.0.0.1:3000
-
 CORS_ALLOWED_ORIGIN_REGEX=
-
 VT_API_KEY=
 ABUSEIPDB_API_KEY=
+GROQ_API_KEY=
+GROQ_MODEL=llama-3.3-70b-versatile
 ```
 
 | Variable | Purpose | Required |
 |---|---|---|
-| `NEXT_PUBLIC_API_BASE_URL` | Backend API address | Yes |
+| `NEXT_PUBLIC_API_URL` | Backend API address | Yes |
 | `CORS_ALLOWED_ORIGINS` | Permitted frontend origins | Yes for configured cross-origin deployment |
 | `CORS_ALLOWED_ORIGIN_REGEX` | Optional preview deployment origins | No |
 | `VT_API_KEY` | VirusTotal integration | No |
 | `ABUSEIPDB_API_KEY` | AbuseIPDB integration | No |
+| `GROQ_API_KEY` | Groq API key for LLM-assisted agent analysis | No |
+| `GROQ_MODEL` | Groq model; defaults to `llama-3.3-70b-versatile` | No |
 
 Only configure API keys when the corresponding integrations are implemented and enabled.
 
@@ -261,18 +263,7 @@ uvicorn main:app --reload --port 8000
 
 Backend documentation:
 
-Copy `backend/.env.example` to the repository root as `.env` and add provider credentials only when available. Future investigation results should be clearly labeled when synthetic data is used.
-
-### Environment variables
-
-| Variable | Purpose |
-| --- | --- |
-| `CORS_ALLOWED_ORIGINS` | Comma-separated allowed frontend origins |
-| `CORS_ALLOWED_ORIGIN_REGEX` | Optional regex for preview deployment origins |
-| `VT_API_KEY` | Optional VirusTotal threat-intelligence lookup |
-| `ABUSEIPDB_API_KEY` | Optional AbuseIPDB threat-intelligence lookup |
-| `GROQ_API_KEY` | Optional Groq API key for LLM-assisted agent analysis |
-| `GROQ_MODEL` | Groq model name; defaults to `llama-3.3-70b-versatile` |
+http://localhost:8000/docs
 
 ### 3. Start the Frontend
 
@@ -286,7 +277,7 @@ npm install
 Create `.env.local` and configure the backend URL:
 
 ```env
-NEXT_PUBLIC_API_BASE_URL=http://localhost:8000
+NEXT_PUBLIC_API_URL=http://localhost:8000
 ```
 
 Start the development server:
@@ -333,7 +324,7 @@ ThreatForge is configured for a two-project Vercel deployment using the same Git
 Production environment variable:
 
 ```env
-NEXT_PUBLIC_API_BASE_URL=https://your-backend.vercel.app
+NEXT_PUBLIC_API_URL=https://your-backend.vercel.app
 ```
 
 ### Backend Deployment
