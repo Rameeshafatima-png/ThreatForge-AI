@@ -5,3 +5,6 @@ __pycache__/
 node_modules/
 .vscode/
 .vercel/
+*.pyc
+*.tsbuildinfo
+.DS_Store

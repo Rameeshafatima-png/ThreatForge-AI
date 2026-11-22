@@ -261,7 +261,18 @@ uvicorn main:app --reload --port 8000
 
 Backend documentation:
 
-http://localhost:8000/docs
+Copy `backend/.env.example` to the repository root as `.env` and add provider credentials only when available. Future investigation results should be clearly labeled when synthetic data is used.
+
+### Environment variables
+
+| Variable | Purpose |
+| --- | --- |
+| `CORS_ALLOWED_ORIGINS` | Comma-separated allowed frontend origins |
+| `CORS_ALLOWED_ORIGIN_REGEX` | Optional regex for preview deployment origins |
+| `VT_API_KEY` | Optional VirusTotal threat-intelligence lookup |
+| `ABUSEIPDB_API_KEY` | Optional AbuseIPDB threat-intelligence lookup |
+| `GROQ_API_KEY` | Optional Groq API key for LLM-assisted agent analysis |
+| `GROQ_MODEL` | Groq model name; defaults to `llama-3.3-70b-versatile` |
 
 ### 3. Start the Frontend
 

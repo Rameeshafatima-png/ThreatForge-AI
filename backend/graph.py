@@ -9,6 +9,15 @@ import operator
 import httpx
 from langgraph.graph import END, StateGraph
 
+from llm import (
+    ask_llm,
+    clean_choice,
+    clean_list,
+    clean_text,
+    dedupe_preserve_order,
+    llm_info,
+)
+
 
 class Evidence(TypedDict):
     source: str
@@ -109,6 +118,10 @@ def agent_record(
     }
 
 
+def groq_summary(summary: str, llm: dict[str, Any]) -> str:
+    return f"{summary} Groq-assisted." if llm["used"] else summary
+
+
 def triage_agent(state: InvestigationState) -> dict[str, Any]:
     started = utc_now()
     start_ms = time.monotonic()
@@ -150,6 +163,43 @@ def triage_agent(state: InvestigationState) -> dict[str, Any]:
             "Analyze bounded network-flow records when present",
         ],
     }
+    llm_response = ask_llm(
+        "Classify the submitted evidence and summarize only facts in it.",
+        {
+            "input_type": ["ip", "url", "file_hash", "security_log", "incident_description", "network_flow_csv", "mixed", "unknown"],
+            "security_logs_present": "boolean",
+            "summary": "one sentence",
+            "focus_items": "up to 3 strings",
+        },
+        {
+            "prompt": state["prompt"][:5000],
+            "indicators": indicators,
+            "network_records_present": network_present,
+            "network_record_count": len(network_records),
+        },
+        400,
+    )
+    llm_result: dict[str, Any] = {}
+    if llm_response["data"] is not None:
+        data = llm_response["data"]
+        input_type = clean_choice(
+            data.get("input_type"),
+            ("ip", "url", "file_hash", "security_log", "incident_description", "network_flow_csv", "mixed", "unknown"),
+        )
+        llm_logs_present = data.get("security_logs_present")
+        summary_text = clean_text(data.get("summary"), 300)
+        if summary_text:
+            summary_text = re.split(r"(?<=[.!?])\s+", summary_text, maxsplit=1)[0]
+        focus_items = clean_list(data.get("focus_items"), max_items=3, max_length=180)
+        if input_type:
+            llm_result["input_type"] = input_type
+        if isinstance(llm_logs_present, bool):
+            llm_result["security_logs_present"] = llm_logs_present
+            plan["security_logs_present"] = plan["security_logs_present"] or llm_logs_present
+        if summary_text:
+            llm_result["summary"] = summary_text
+        llm_result["focus_items"] = focus_items
+    plan["llm"] = llm_info(llm_response, llm_result)
     elapsed = round((time.monotonic() - start_ms) * 1000)
     return {
         "evidence": indicators,
@@ -163,7 +213,10 @@ def triage_agent(state: InvestigationState) -> dict[str, Any]:
                 started,
                 utc_now(),
                 elapsed,
-                f"Extracted {len(indicators)} indicator(s); identified {'security log text' if has_security_log else 'no explicit security log text'}.",
+                groq_summary(
+                    f"Extracted {len(indicators)} indicator(s); identified {'security log text' if plan['security_logs_present'] else 'no explicit security log text'}.",
+                    llm_response,
+                ),
                 plan,
             )
         ],
@@ -191,29 +244,8 @@ def threat_intelligence_agent(state: InvestigationState) -> dict[str, Any]:
     errors: list[str] = []
 
     if not ip_values:
-        elapsed = round((time.monotonic() - start_ms) * 1000)
-        return {
-            "threat_intelligence": {
-                "status": "skipped",
-                "provider_calls": [],
-                "findings": [],
-                "missing": ["No IP indicator available for reputation lookup"],
-            },
-            "agent_executions": [
-                agent_record(
-                    "Threat Intelligence Agent",
-                    "skipped",
-                    started,
-                    utc_now(),
-                    elapsed,
-                    "Skipped because no IP indicator was extracted.",
-                    {"provider_calls": [], "findings": []},
-                    ["No IP indicator available"],
-                )
-            ],
-        }
-
-    if abuse_key:
+        errors.append("No IP indicator available for reputation lookup")
+    elif abuse_key:
         for ip in ip_values:
             try:
                 response = httpx.get(
@@ -249,8 +281,50 @@ def threat_intelligence_agent(state: InvestigationState) -> dict[str, Any]:
                 })
             except httpx.HTTPError as exc:
                 errors.append(f"VirusTotal lookup failed for {ip}: {exc}")
-    else:
+    elif ip_values:
         errors.append("No threat intelligence credentials configured")
+
+    ip_context = []
+    for value in ip_values:
+        address = ipaddress.ip_address(value)
+        ip_context.append({
+            "ip": value,
+            "private": address.is_private,
+            "global": address.is_global,
+            "loopback": address.is_loopback,
+            "reserved": address.is_reserved,
+        })
+    compact_findings = []
+    for finding in findings[:10]:
+        data = finding.get("data", {})
+        attributes = data.get("attributes", {}) if isinstance(data, dict) else {}
+        compact_findings.append({
+            "provider": finding.get("provider"),
+            "indicator": finding.get("indicator"),
+            "source": finding.get("source"),
+            "confidence_score": data.get("abuseConfidenceScore") if isinstance(data, dict) else None,
+            "total_reports": data.get("totalReports") if isinstance(data, dict) else None,
+            "country_code": data.get("countryCode") or attributes.get("country") if isinstance(data, dict) else None,
+            "last_analysis_stats": attributes.get("last_analysis_stats"),
+            "reputation": attributes.get("reputation"),
+        })
+    llm_response = ask_llm(
+        "Interpret the supplied IP context and provider findings, with explicit caveats.",
+        {"interpretation": "string", "caveats": "list of strings"},
+        {"ip_context": ip_context, "provider_findings": compact_findings},
+        500,
+    )
+    llm_result: dict[str, Any] = {}
+    if llm_response["data"] is not None:
+        data = llm_response["data"]
+        interpretation = (
+            "No provider findings are available to establish an IP reputation."
+            if not compact_findings
+            else clean_text(data.get("interpretation"), 700)
+        )
+        if interpretation:
+            llm_result["interpretation"] = interpretation
+        llm_result["caveats"] = clean_list(data.get("caveats"), max_items=5, max_length=240)
 
     elapsed = round((time.monotonic() - start_ms) * 1000)
     status = "completed" if findings else "skipped"
@@ -266,6 +340,7 @@ def threat_intelligence_agent(state: InvestigationState) -> dict[str, Any]:
         ],
         "findings": findings,
         "missing": errors,
+        "llm": llm_info(llm_response, llm_result),
     }
     return {
         "threat_intelligence": output,
@@ -276,7 +351,10 @@ def threat_intelligence_agent(state: InvestigationState) -> dict[str, Any]:
                 started,
                 utc_now(),
                 elapsed,
-                summary,
+                groq_summary(
+                    summary if ip_values else "Skipped provider lookups because no IP indicator was extracted.",
+                    llm_response,
+                ),
                 output,
                 errors,
             )
@@ -523,6 +601,62 @@ def log_analysis_agent(state: InvestigationState) -> dict[str, Any]:
             ]
         ),
     }
+    llm_response = ask_llm(
+        "Interpret the parsed log and network summaries; identify notable patterns and data-quality limits.",
+        {
+            "interpretation": "string",
+            "notable_patterns": "list of strings",
+            "data_quality_notes": "list of strings",
+        },
+        {
+            "counts": {
+                "event_count": output["event_count"],
+                "line_count": output["line_count"],
+                "failed_attempt_count": output["failed_attempt_count"],
+                "successful_login_count": output["successful_login_count"],
+                "session_event_count": output["session_event_count"],
+                "missing_value_count": network_summary.get("missing_value_count", 0),
+            },
+            "groups": [
+                {
+                    "source_ip": group["source_ip"],
+                    "target_host": group["target_host"],
+                    "failed_count": group["failed_count"],
+                    "accepted_count": group["accepted_count"],
+                    "session_count": group["session_count"],
+                    "usernames": group["usernames"][:10],
+                }
+                for group in grouped_events[:20]
+            ],
+            "sample_events": [
+                {
+                    "timestamp": event["timestamp"],
+                    "host": event["host"],
+                    "service": event["service"],
+                    "source_ip": event["source_ip"],
+                    "username": event["username"],
+                    "outcome": event["outcome"],
+                    "raw": event["raw"][:300],
+                }
+                for event in events[:15]
+            ],
+            "network_summary": network_summary,
+        },
+        500,
+    )
+    llm_result: dict[str, Any] = {}
+    if llm_response["data"] is not None:
+        data = llm_response["data"]
+        interpretation = clean_text(data.get("interpretation"), 700)
+        if interpretation:
+            llm_result["interpretation"] = interpretation
+        llm_result["notable_patterns"] = clean_list(
+            data.get("notable_patterns"), max_items=5, max_length=240
+        )
+        llm_result["data_quality_notes"] = clean_list(
+            data.get("data_quality_notes"), max_items=5, max_length=240
+        )
+    output["llm"] = llm_info(llm_response, llm_result)
     elapsed = round((time.monotonic() - start_ms) * 1000)
     return {
         "log_analysis": output,
@@ -533,12 +667,12 @@ def log_analysis_agent(state: InvestigationState) -> dict[str, Any]:
                 started,
                 utc_now(),
                 elapsed,
-                (
+                groq_summary((
                     f"Analyzed {len(network_records)} bounded network-flow record(s) and identified "
                     f"{len(network_summary.get('patterns', []))} network pattern(s)."
                     if network_records
                     else f"Parsed {len(raw_events)} submitted line(s) and identified {len(failed_events)} failed authentication event(s)."
-                ),
+                ), llm_response),
                 output,
                 output["missing"],
             )
@@ -602,18 +736,74 @@ def detection_agent(state: InvestigationState) -> dict[str, Any]:
             "confidence": "provider-dependent",
         })
 
+    for hypothesis in hypotheses:
+        hypothesis["source"] = "rules"
+
+    llm_response = ask_llm(
+        "Suggest up to three additional evidence-based threat hypotheses. Every hypothesis must cite its factual basis.",
+        {"hypotheses": [{"pattern": "string", "basis": "string", "confidence": "string"}]},
+        {
+            "facts": {
+                "failed_attempt_count": failed_count,
+                "successful_login_count": successful_count,
+                "session_event_count": session_count,
+                "source_ips": source_ips,
+                "target_hosts": target_hosts,
+                "affected_usernames": affected_usernames,
+                "network_summary": network_summary,
+                "provider_finding_count": len(provider_findings),
+            },
+            "rule_hypotheses": hypotheses,
+        },
+        500,
+    )
+    llm_hypotheses: list[dict[str, Any]] = []
+    if llm_response["data"] is not None:
+        proposed = llm_response["data"].get("hypotheses")
+        existing_patterns = {
+            hypothesis["pattern"].casefold()
+            for hypothesis in hypotheses
+        }
+        if isinstance(proposed, list):
+            for item in proposed:
+                if len(llm_hypotheses) >= 3:
+                    break
+                if not isinstance(item, dict):
+                    continue
+                pattern = clean_text(item.get("pattern"), 160)
+                basis = clean_text(item.get("basis"), 400)
+                if not pattern or not basis or pattern.casefold() in existing_patterns:
+                    continue
+                hypothesis = {
+                    "pattern": pattern,
+                    "basis": basis,
+                    "confidence": clean_choice(
+                        item.get("confidence"),
+                        ("low", "supporting", "moderate", "high", "provider-dependent"),
+                    ) or "supporting",
+                    "not_confirmed": "This hypothesis is not confirmed and requires validation.",
+                    "source": "llm",
+                }
+                llm_hypotheses.append(hypothesis)
+                existing_patterns.add(pattern.casefold())
+    hypotheses.extend(llm_hypotheses)
+
     output = {
         "hypothesis_count": len(hypotheses),
         "hypotheses": hypotheses,
         "missing": [] if hypotheses else ["Insufficient corroborating evidence for a pattern hypothesis"],
+        "llm": llm_info(
+            llm_response,
+            {"additional_hypotheses": llm_hypotheses},
+        ),
     }
     elapsed = round((time.monotonic() - start_ms) * 1000)
     status = "completed"
-    summary = (
+    summary = groq_summary((
         f"Correlated {len(hypotheses)} supported hypothesis/hypotheses."
         if hypotheses
         else "Correlation completed; no supported threat pattern was established from the available evidence."
-    )
+    ), llm_response)
     return {
         "correlation": output,
         "agent_executions": [
@@ -635,7 +825,12 @@ def risk_report_agent(state: InvestigationState) -> dict[str, Any]:
     started = utc_now()
     start_ms = time.monotonic()
     evidence_count = len(state["evidence"])
-    hypothesis_count = state["correlation"].get("hypothesis_count", 0)
+    all_hypotheses = state["correlation"].get("hypotheses", [])
+    rule_hypotheses = [
+        hypothesis for hypothesis in all_hypotheses
+        if hypothesis.get("source") == "rules"
+    ]
+    hypothesis_count = len(rule_hypotheses)
     provider_count = len(state["threat_intelligence"].get("findings", []))
     log_analysis = state["log_analysis"]
     failed_count = log_analysis.get("failed_attempt_count", 0)
@@ -713,7 +908,7 @@ def risk_report_agent(state: InvestigationState) -> dict[str, Any]:
             f"{hypothesis_count} correlated hypothesis/hypotheses",
             ]
         ),
-        "hypotheses": state["correlation"].get("hypotheses", []),
+        "hypotheses": all_hypotheses,
         "unknowns": [
             "Whether the successful login was authorized",
             "Post-login activity and privilege changes",
@@ -728,7 +923,7 @@ def risk_report_agent(state: InvestigationState) -> dict[str, Any]:
             else uncertainty
         ),
         "uncertainty": uncertainty,
-        "recommendations": [
+        "recommendations": dedupe_preserve_order([
             (
                 "Treat the successful authentication as high-priority and isolate or verify the target host and source activity"
                 if ssh_brute_force_success
@@ -742,8 +937,60 @@ def risk_report_agent(state: InvestigationState) -> dict[str, Any]:
             "Review the submitted evidence in the original system context",
             "Preserve source logs and collection timestamps",
             "Connect configured threat intelligence providers before attribution decisions",
-        ],
+        ]),
     }
+    llm_response = ask_llm(
+        "Create an uncertainty-aware risk-report enhancement. Recommendations and severity must be based only on the supplied facts.",
+        {
+            "severity": ["unknown", "low", "medium", "high", "critical"],
+            "severity_rationale": "string",
+            "executive_summary": "string",
+            "recommendations": "3 to 6 strings",
+            "additional_unknowns": "list of strings",
+        },
+        {
+            "rule_based_report": {**report, "hypotheses": rule_hypotheses},
+            "rule_hypotheses": rule_hypotheses,
+            "facts": {
+                "evidence_count": evidence_count,
+                "provider_finding_count": provider_count,
+                "network_summary": network_summary,
+            },
+        },
+        800,
+    )
+    llm_result: dict[str, Any] = {}
+    if llm_response["data"] is not None:
+        data = llm_response["data"]
+        proposed_severity = clean_choice(
+            data.get("severity"),
+            ("unknown", "low", "medium", "high", "critical"),
+        )
+        severity_order = {"unknown": 0, "low": 1, "medium": 2, "high": 3, "critical": 4}
+        if proposed_severity and severity_order[proposed_severity] > severity_order[report["severity"]]:
+            report["severity"] = proposed_severity
+        llm_result["severity"] = report["severity"]
+
+        severity_rationale = clean_text(data.get("severity_rationale"), 500)
+        executive_summary = clean_text(data.get("executive_summary"), 700)
+        recommendations = dedupe_preserve_order(
+            clean_list(data.get("recommendations"), max_items=6, max_length=240)
+        )
+        additional_unknowns = clean_list(
+            data.get("additional_unknowns"), max_items=6, max_length=240
+        )
+        if severity_rationale:
+            llm_result["severity_rationale"] = severity_rationale
+        if executive_summary:
+            llm_result["executive_summary"] = executive_summary
+        llm_result["recommendations"] = recommendations
+        llm_result["additional_unknowns"] = additional_unknowns
+        if len(recommendations) >= 2:
+            report["recommendations"] = recommendations
+        report["unknowns"] = dedupe_preserve_order(
+            report["unknowns"] + additional_unknowns
+        )
+    report["llm"] = llm_info(llm_response, llm_result)
     elapsed = round((time.monotonic() - start_ms) * 1000)
     return {
         "risk_report": report,
@@ -755,7 +1002,10 @@ def risk_report_agent(state: InvestigationState) -> dict[str, Any]:
                 started,
                 utc_now(),
                 elapsed,
-                "Generated an uncertainty-aware report without asserting unsupported severity or attribution.",
+                groq_summary(
+                    "Generated an uncertainty-aware report without asserting unsupported severity or attribution.",
+                    llm_response,
+                ),
                 report,
                 uncertainty,
             )
