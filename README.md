@@ -1,245 +1,295 @@
-# ThreatForge
+# ThreatForge AI
+### Multi-Agent AI Cybersecurity Investigation Platform
 
-### Autonomous Multi-Agent Cybersecurity Investigation System
+**Turning Security Evidence into Structured Intelligence.**
 
-ThreatForge is an AI-powered cybersecurity investigation platform designed to analyze security evidence, investigate suspicious activity, correlate potential threats, and generate structured incident assessment reports through a coordinated multi-agent workflow.
+ThreatForge AI is an AI-powered cybersecurity investigation platform designed to analyze suspicious security evidence, coordinate specialized AI agents, correlate potential threats, and generate structured investigation reports.
 
-Built around **LangGraph**, ThreatForge organizes security investigation into specialized stages, allowing multiple agents to examine evidence from different perspectives and contribute to a unified investigation.
+Built using **Python, FastAPI, LangGraph, Groq, Next.js, React, and TypeScript**, ThreatForge AI brings multiple investigation capabilities together in a centralized intelligence workspace.
+
+The platform aims to make cybersecurity investigations more organized, explainable, and efficient by combining AI-powered analysis with evidence-based investigation workflows.
 
 ---
 
-## Overview
+## Project Overview
 
-Security teams often deal with large volumes of alerts, logs, suspicious IP addresses, and network activity. Manually investigating every alert can be time-consuming and makes it difficult to identify relationships between seemingly unrelated events.
+Cybersecurity investigations often involve examining multiple sources of information, including suspicious IP addresses, URLs, file hashes, network activity, and security logs.
 
-ThreatForge aims to streamline this process through a structured multi-agent investigation workflow.
+Manually analyzing these indicators and connecting related findings can be time-consuming.
 
-The system accepts security evidence, processes it through specialized agents, correlates relevant findings, evaluates potential risk, and produces an investigation report.
+ThreatForge AI addresses this challenge through a coordinated multi-agent architecture.
 
-### Key Objectives
+Users can submit security evidence, initiate an investigation, and review the results through an interactive investigation workspace.
 
-- Automate structured security evidence analysis.
-- Coordinate specialized AI agents through LangGraph.
-- Identify suspicious patterns and potential indicators of compromise.
-- Correlate findings across different evidence sources.
-- Assess incident severity and investigation confidence.
+The platform coordinates specialized agents to:
+
+- Examine submitted security evidence.
+- Analyze relevant threat intelligence.
+- Investigate security logs.
+- Identify potential relationships between findings.
+- Assess investigation risk and confidence.
 - Generate structured investigation reports.
-- Preserve uncertainty when evidence is incomplete or insufficient.
 
-## Architecture
+ThreatForge AI focuses on presenting findings with supporting evidence rather than automatically treating every suspicious indicator as a confirmed threat.
 
-ThreatForge uses a multi-agent architecture orchestrated through LangGraph.
+---
 
-### Agent Workflow
+## Key Features
 
-The system consists of five specialized agents:
+### 1. AI-Powered Multi-Agent Investigation
+
+A LangGraph-powered workflow coordinates specialized AI agents, each responsible for a different investigation task.
+
+### 2. Security Evidence Analysis
+
+Designed to analyze security-related evidence, including:
+
+- IP addresses
+- Suspicious URLs
+- File hashes
+- Security logs
+- Network-related evidence
+- Incident descriptions
+
+### 3. Threat Intelligence Analysis
+
+Supports threat intelligence enrichment through configured external services, including:
+
+- VirusTotal
+- AbuseIPDB
+
+### 4. Threat Detection and Correlation
+
+Combines findings from different investigation stages to identify relationships, suspicious patterns, and potential threat hypotheses.
+
+### 5. Risk Assessment
+
+Organizes investigation results into risk classifications and confidence assessments to help users understand the significance of the findings.
+
+### 6. Investigation Command Center
+
+A centralized workspace designed to display:
+
+- Executive Summary
+- Investigation Overview
+- Agent Execution Status
+- Selected Agent Findings
+- Evidence Intelligence
+- Threat Correlations
+- Risk Assessment
+- Log Intelligence
+- Investigation Limitations
+
+### 7. Investigation History
+
+Provides access to recorded investigations and their associated results through the application interface.
+
+### 8. Structured Investigation Reports
+
+Generates organized investigation summaries containing findings, evidence, classifications, and recommendations.
+
+### 9. Interactive Dashboard
+
+A modern web interface built to make complex investigation information easier to explore and understand.
+
+---
+
+## AI Agent Architecture
+
+ThreatForge AI uses five specialized agents coordinated through LangGraph.
 
 | Agent | Responsibility |
 |---|---|
-| Triage Agent | Examines incoming evidence and identifies its type, relevance, and initial priority. |
-| Threat Intelligence Agent | Checks available threat intelligence sources for relevant reputation and contextual information. |
-| Log Analysis Agent | Examines security logs and extracts relevant events, indicators, and suspicious patterns. |
-| Threat Detection & Correlation Agent | Connects findings, identifies relationships, and develops potential threat hypotheses. |
-| Risk Assessment & Reporting Agent | Evaluates the investigation results and produces a structured incident report. |
+| Triage Agent | Examines submitted evidence and identifies relevant indicators. |
+| Threat Intelligence Agent | Retrieves available intelligence information about relevant indicators. |
+| Log Analysis Agent | Examines security logs and identifies potentially suspicious activity. |
+| Threat Detection & Correlation Agent | Correlates findings and identifies potential threat patterns. |
+| Risk Assessment & Reporting Agent | Evaluates investigation findings and generates a structured report. |
 
-### Investigation Flow
+### Investigation Workflow
 
 ```mermaid
 flowchart TD
     A[Security Evidence] --> B[Triage Agent]
+
     B --> C[Threat Intelligence Agent]
     B --> D[Log Analysis Agent]
-    C --> E[Threat Detection & Correlation Agent]
+
+    C --> E[Threat Detection and Correlation]
     D --> E
-    E --> F[Risk Assessment & Reporting Agent]
+
+    E --> F[Risk Assessment and Reporting]
+
     F --> G[Investigation Report]
-    G --> H[Frontend Workspace]
+    G --> H[ThreatForge AI Workspace]
 ```
 
-The agents exchange information through shared investigation state managed by LangGraph. Conditional routing determines the appropriate execution path based on the available evidence and investigation results.
+Each agent contributes its findings to the shared investigation workflow. LangGraph manages the coordination and progression of the investigation stages.
 
-## Core Features
-
-### Multi-Agent Investigation
-A coordinated workflow divides investigation responsibilities among five specialized agents.
-
-### Security Evidence Analysis
-Designed to process security-related evidence such as:
-
-- IP addresses
-- URLs
-- File hashes
-- SSH authentication logs
-- Network-flow data
-- Incident descriptions
-
-Actual supported input formats depend on the implemented backend parsers.
-
-### Threat Intelligence
-Optional integration with external threat intelligence providers can enrich investigations with reputation information.
-
-### Threat Correlation
-Combines extracted indicators and observed events to identify relationships and potential attack patterns.
-
-### Risk Assessment
-Produces an assessment containing relevant findings, severity, confidence, hypotheses, and recommendations.
-
-### Investigation Workspace
-A frontend interface for submitting evidence and viewing investigation progress and results.
-
-### Investigation History
-Designed to provide access to previous investigations, subject to the configured persistence implementation.
+---
 
 ## Technology Stack
 
+ThreatForge AI combines modern web development technologies, AI frameworks, and cybersecurity intelligence services.
+
+### Frontend Technologies
+
 | Technology | Purpose |
 |---|---|
-| Python | Backend development and evidence processing |
-| FastAPI | Backend API and request handling |
-| LangGraph | Multi-agent orchestration and workflow management |
-| Next.js | Frontend application |
-| React | Interactive user interface |
-| TypeScript | Frontend type safety |
-| Tailwind CSS | Interface styling |
-| Vercel | Frontend and backend deployment |
+| Next.js | Frontend application framework |
+| React.js | Component-based user interface |
+| TypeScript | Type-safe application development |
+| Tailwind CSS | UI styling and responsive layouts |
+| JavaScript | Frontend application logic |
+| CSS | Custom interface styling |
 
-Additional libraries and integrations should be documented according to the actual dependency files.
+### Backend Technologies
+
+| Technology | Purpose |
+|---|---|
+| Python | Core backend programming |
+| FastAPI | REST API development |
+| Uvicorn | ASGI application server |
+| Pydantic | Data validation and structured schemas |
+
+### AI and Agent Technologies
+
+| Technology | Purpose |
+|---|---|
+| LangGraph | Multi-agent workflow orchestration |
+| Groq API | LLM inference |
+| Large Language Models | Investigation analysis and report generation |
+
+### Cybersecurity Technologies
+
+| Technology | Purpose |
+|---|---|
+| VirusTotal API | Threat intelligence enrichment |
+| AbuseIPDB API | IP reputation information |
+| Security Log Analysis | Investigation of relevant security events |
+| CIC-IDS Dataset | Network intrusion detection research data, where configured |
+
+### Development and Deployment
+
+| Technology | Purpose |
+|---|---|
+| Git | Version control |
+| GitHub | Source code management |
+| npm | Frontend dependency management |
+| Python Virtual Environment | Backend dependency isolation |
+| Vercel | Frontend deployment |
+
+*Technology and integration availability depends on the actual project configuration and installed dependencies.*
+
+---
+
+## System Architecture
+
+ThreatForge AI follows a frontend-backend architecture.
+
+```text
+                    USER
+                     |
+                     v
+           NEXT.JS FRONTEND
+           React + TypeScript
+                     |
+                     v
+              FASTAPI BACKEND
+                     |
+                     v
+             LANGGRAPH WORKFLOW
+                     |
+        +------------+------------+
+        |            |            |
+        v            v            v
+      Triage     Threat Intel   Log Analysis
+       Agent        Agent         Agent
+        |            |            |
+        +------------+------------+
+                     |
+                     v
+             THREAT CORRELATION
+                     |
+                     v
+             RISK ASSESSMENT
+                     |
+                     v
+             INVESTIGATION REPORT
+                     |
+                     v
+            INVESTIGATION WORKSPACE
+```
+
+---
 
 ## Project Structure
 
 ```text
-ThreatForge/
-│
-├── frontend/
-│   ├── app/ or pages/
-│   ├── components/
-│   ├── lib/
-│   ├── public/
-│   ├── .env.example
-│   └── package.json
+ThreatForge-AI/
 │
 ├── backend/
 │   ├── main.py
 │   ├── graph.py
 │   ├── csv_loader.py
 │   ├── data/
-│   ├── tests/
-│   ├── .env.example
 │   └── requirements.txt
+│
+├── frontend/
+│   ├── components/
+│   │   ├── AppLayout.tsx
+│   │   ├── Sidebar.tsx
+│   │   └── CasebookWorkspace.tsx
+│   │
+│   ├── pages/
+│   │   ├── index.tsx
+│   │   └── ...
+│   │
+│   ├── lib/
+│   ├── public/
+│   ├── package.json
+│   └── ...
 │
 ├── .gitignore
 └── README.md
 ```
 
-The structure above is illustrative. Retain the actual directory and file names from the repository when finalizing this documentation.
+*This is a simplified representation of the main project structure.*
 
-## Dataset
+---
 
-ThreatForge uses the CIC-IDS Collection as a source of network-flow evidence and potential evaluation data.
+## Getting Started
 
-Dataset source:
-
-[CIC-IDS Collection — Kaggle](https://www.kaggle.com/datasets/dhoogla/cicidscollection)
-
-The dataset includes network traffic features and attack categories such as:
-
-- Benign
-- Bruteforce
-- DDoS
-- DoS
-- Botnet
-- Portscan
-- Infiltration
-- Webattack
-
-### Dataset Usage
-
-The intended approach is to use selected network-flow records as investigation evidence.
-
-The `ClassLabel` and `Label` columns contain ground-truth category information. These labels should remain separate from the agent-visible investigation input to prevent the investigation workflow from simply reading the correct answer.
-
-The project does not require a trained ML classifier for this approach. Detection and correlation are handled through the implemented analysis logic and agent workflow.
-
-Dataset availability and actual integration should be verified against the current backend implementation.
-
-## Investigation Output
-
-An investigation report is designed to organize results into sections such as:
-
-- Incident classification
-- Severity assessment
-- Confidence level
-- Extracted indicators
-- Observed security events
-- Threat hypotheses
-- Correlated evidence
-- Investigation findings
-- Recommendations
-- Uncertainty and limitations
-- Agent execution status
-
-ThreatForge should distinguish observed facts from hypotheses. A suspicious pattern should not automatically be presented as a confirmed compromise.
-
-## Environment Configuration
-
-ThreatForge uses environment variables to configure frontend connectivity and backend integrations.
-
-### Frontend
-
-Create `frontend/.env.local`:
-
-```env
-NEXT_PUBLIC_API_URL=http://localhost:8000
-```
-
-For production, replace the value with the deployed backend URL.
-
-### Backend
-
-Copy `backend/.env.example` to `.env` in the repository root:
-
-```env
-CORS_ALLOWED_ORIGINS=http://localhost:3000,http://127.0.0.1:3000
-CORS_ALLOWED_ORIGIN_REGEX=
-VT_API_KEY=
-ABUSEIPDB_API_KEY=
-GROQ_API_KEY=
-GROQ_MODEL=llama-3.3-70b-versatile
-```
-
-| Variable | Purpose | Required |
-|---|---|---|
-| `NEXT_PUBLIC_API_URL` | Backend API address | Yes |
-| `CORS_ALLOWED_ORIGINS` | Permitted frontend origins | Yes for configured cross-origin deployment |
-| `CORS_ALLOWED_ORIGIN_REGEX` | Optional preview deployment origins | No |
-| `VT_API_KEY` | VirusTotal integration | No |
-| `ABUSEIPDB_API_KEY` | AbuseIPDB integration | No |
-| `GROQ_API_KEY` | Groq API key for LLM-assisted agent analysis | No |
-| `GROQ_MODEL` | Groq model; defaults to `llama-3.3-70b-versatile` | No |
-
-Only configure API keys when the corresponding integrations are implemented and enabled.
-
-Never commit `.env` or `.env.local` files or expose private credentials through `NEXT_PUBLIC_*` variables.
-
-## Local Development
+Follow the steps below to run ThreatForge AI locally.
 
 ### Prerequisites
 
-- Python 3.10 or compatible version supported by the backend dependencies.
-- Node.js and npm.
-- Git.
+Install the following tools:
+
+- Python 3.10 or a version compatible with the backend dependencies
+- Node.js
+- npm
+- Git
 
 ### 1. Clone the Repository
 
 ```bash
-git clone <YOUR_GITHUB_REPOSITORY_URL>
-cd ThreatForge
+git clone https://github.com/Rameeshafatima-png/ThreatForge-AI.git
+
+cd ThreatForge-AI
 ```
 
-### 2. Start the Backend
+### 2. Backend Setup
+
+Navigate to the backend directory:
 
 ```bash
 cd backend
+```
+
+Create a virtual environment:
+
+```bash
 python -m venv .venv
 ```
 
@@ -249,156 +299,194 @@ Activate the environment on Windows:
 .venv\Scripts\activate
 ```
 
-Install dependencies:
+Install backend dependencies:
 
 ```bash
 pip install -r requirements.txt
 ```
 
-Start FastAPI:
+### 3. Configure Environment Variables
+
+Create a `.env` file in the backend directory and add the configuration required by your application.
+
+Example:
+
+```env
+GROQ_API_KEY=your_groq_api_key
+GROQ_MODEL=your_configured_model
+
+VT_API_KEY=your_virustotal_api_key
+ABUSEIPDB_API_KEY=your_abuseipdb_api_key
+```
+
+Only configure the integrations used by your backend.
+
+Keep API keys private. Never upload `.env` files or secrets to GitHub.
+
+### 4. Run the Backend
+
+From the backend directory:
 
 ```bash
 uvicorn main:app --reload --port 8000
 ```
 
-Backend documentation:
+Backend URL:
 
+```text
+http://localhost:8000
+```
+
+FastAPI documentation:
+
+```text
 http://localhost:8000/docs
+```
 
-### 3. Start the Frontend
+### 5. Frontend Setup
 
-Open another terminal:
+Open another terminal and navigate to the frontend:
 
 ```bash
 cd frontend
+```
+
+Install dependencies:
+
+```bash
 npm install
 ```
 
-Create `.env.local` and configure the backend URL:
+Create a `.env.local` file inside the frontend directory:
 
 ```env
 NEXT_PUBLIC_API_URL=http://localhost:8000
 ```
 
-Start the development server:
+Make sure this variable matches the API configuration used by the frontend.
+
+### 6. Run the Frontend
 
 ```bash
 npm run dev
 ```
 
-Open:
+Open the application:
 
+```text
 http://localhost:3000
-
-## API
-
-The backend is built with FastAPI.
-
-The following routes are relevant to the application and should be verified against the actual backend implementation:
-
-| Endpoint | Purpose |
-|---|---|
-| `/` | API information |
-| `/health` | Backend health check |
-| `/docs` | Interactive API documentation |
-| `/network-sample` | Network evidence sample |
-| `/investigations` | Investigation submission or retrieval, depending on HTTP method |
-
-For complete endpoint definitions, visit the FastAPI documentation at `/docs`.
-
-## Deployment
-
-ThreatForge is configured for a two-project Vercel deployment using the same GitHub repository.
-
-### Frontend Deployment
-
-| Setting | Value |
-|---|---|
-| Platform | Vercel |
-| Root Directory | `frontend` |
-| Framework | Next.js |
-| Build Command | `npm run build` |
-| Install Command | `npm install` |
-| Output Directory | Default |
-
-Production environment variable:
-
-```env
-NEXT_PUBLIC_API_URL=https://your-backend.vercel.app
 ```
 
-### Backend Deployment
-
-| Setting | Value |
-|---|---|
-| Platform | Vercel |
-| Root Directory | `backend` |
-| Framework | Python / FastAPI |
-
-Configure backend environment variables through the Vercel project settings.
-
-### Deployment Considerations
-
-The serverless deployment model introduces several architectural considerations:
-
-- In-memory investigation storage does not provide reliable persistence across serverless instances.
-- Synchronous agent execution can encounter function execution time limits.
-- Cold starts can increase response times.
-- Bundled files are read-only during execution.
-- Durable investigation history requires external persistent storage.
-- Long-running investigations may eventually require background execution and status polling.
-
-A successful production build alone does not establish that all investigation workflows are operational.
-
-## Security Considerations
-
-- Keep API keys and credentials in backend environment variables.
-- Restrict CORS to trusted frontend origins.
-- Validate incoming investigation evidence.
-- Avoid exposing internal stack traces to users.
-- Treat external threat intelligence as supporting evidence rather than absolute proof.
-- Preserve investigation uncertainty.
-- Require human review before taking consequential containment actions.
-
-## Current Development Status
-
-ThreatForge is an actively developed project.
-
-The following areas should be validated against the latest repository and deployed environment before being marked production-ready:
-
-- End-to-end execution of all five agents.
-- Accuracy of evidence extraction and correlation.
-- External threat intelligence availability.
-- Persistent investigation storage.
-- Report retrieval across separate requests.
-- Vercel serverless execution reliability.
-- Error handling for incomplete evidence and unavailable providers.
-
-## Future Improvements
-
-Potential future development includes:
-
-- Durable investigation storage.
-- Background agent execution and progress polling.
-- Improved threat intelligence integrations.
-- Additional security log parsers.
-- Investigation evaluation using labeled datasets.
-- Improved evidence correlation.
-- Human approval workflows for response actions.
-- More comprehensive automated testing.
-
-## Project Goals
-
-ThreatForge explores how coordinated AI agents can support cybersecurity investigation by combining evidence analysis, threat intelligence, event correlation, and structured risk assessment.
-
-The goal is not to replace security analysts, but to make investigations more organized, explainable, and efficient.
+**Important:** Keep both the backend and frontend servers running while using the local application.
 
 ---
 
-**Project:** ThreatForge  
-**Category:** Cybersecurity / Artificial Intelligence / Multi-Agent Systems  
-**Orchestration:** LangGraph  
-**Backend:** FastAPI  
-**Frontend:** Next.js and TypeScript  
-**Deployment:** Vercel
+## API Documentation
 
+ThreatForge AI uses FastAPI to provide backend functionality.
+
+Once the backend is running, access the interactive API documentation at:
+
+```text
+http://localhost:8000/docs
+```
+
+This documentation allows developers to explore the available API endpoints, request schemas, and responses.
+
+---
+
+## Deployment
+
+ThreatForge AI consists of a frontend and a backend that must be deployed and connected separately.
+
+### Frontend Deployment
+
+The Next.js frontend can be deployed using Vercel.
+
+Recommended configuration:
+
+| Setting | Configuration |
+|---|---|
+| Framework | Next.js |
+| Root Directory | frontend |
+| Install Command | npm install |
+| Build Command | npm run build |
+| Output Directory | Default |
+
+Add the frontend environment variable in Vercel:
+
+```env
+NEXT_PUBLIC_API_URL=https://your-backend-domain
+```
+
+Replace the example URL with the actual deployed backend URL.
+
+### Backend Deployment
+
+Deploy the FastAPI backend on a Python-compatible hosting platform.
+
+Configure the required environment variables and make sure the production frontend origin is allowed through CORS.
+
+After deployment, update the frontend API URL and redeploy the frontend if necessary.
+
+---
+
+## Security Considerations
+
+ThreatForge AI is designed as an investigation-support platform.
+
+Important security principles include:
+
+- Protect private API credentials.
+- Validate submitted security evidence.
+- Restrict CORS to trusted origins.
+- Treat external intelligence information as supporting evidence.
+- Distinguish observed facts from generated hypotheses.
+- Communicate uncertainty and investigation limitations.
+- Use human review before consequential security response actions.
+
+AI-generated assessments should not be treated as a substitute for professional security analysis.
+
+---
+
+## Future Enhancements
+
+Potential improvements for future development include:
+
+- Advanced threat correlation capabilities.
+- Additional threat intelligence integrations.
+- More security log parsers.
+- Improved investigation persistence.
+- Investigation report exports.
+- Advanced evidence visualization.
+- Background agent execution.
+- More comprehensive testing and evaluation.
+- Enhanced human-review workflows.
+
+---
+
+## Project Vision
+
+ThreatForge AI explores the potential of multi-agent artificial intelligence in modern cybersecurity investigations.
+
+By bringing evidence analysis, threat intelligence, log investigation, threat correlation, and risk assessment into one platform, ThreatForge aims to simplify complex security investigation workflows.
+
+**From suspicious indicators to structured intelligence.**
+
+---
+
+## Author
+
+**Rameesha Fatima**
+
+GitHub: [@Rameeshafatima-png](https://github.com/Rameeshafatima-png)
+
+Project Repository: [ThreatForge AI](https://github.com/Rameeshafatima-png/ThreatForge-AI)
+
+---
+
+## License
+
+This project is developed for educational, research, and experimentation purposes.
+
+A specific open-source license can be added to the repository when distribution terms are decided.
