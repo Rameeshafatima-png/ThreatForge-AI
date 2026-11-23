@@ -20,7 +20,7 @@ def ask_llm(
     payload: dict[str, Any],
     max_tokens: int,
 ) -> dict[str, Any]:
-    model = os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile")
+    model = os.getenv("GROQ_MODEL", "openai/gpt-oss-120b")
     api_key = os.getenv("GROQ_API_KEY", "").strip()
     if not api_key:
         return {
@@ -51,7 +51,7 @@ def ask_llm(
                     },
                 ],
             },
-            timeout=12,
+            timeout=30,
         )
         response.raise_for_status()
         content = response.json()["choices"][0]["message"]["content"]

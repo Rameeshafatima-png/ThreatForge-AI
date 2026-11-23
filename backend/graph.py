@@ -830,7 +830,7 @@ def risk_report_agent(state: InvestigationState) -> dict[str, Any]:
         hypothesis for hypothesis in all_hypotheses
         if hypothesis.get("source") == "rules"
     ]
-    hypothesis_count = len(rule_hypotheses)
+    hypothesis_count = len(all_hypotheses)
     provider_count = len(state["threat_intelligence"].get("findings", []))
     log_analysis = state["log_analysis"]
     failed_count = log_analysis.get("failed_attempt_count", 0)
@@ -865,7 +865,7 @@ def risk_report_agent(state: InvestigationState) -> dict[str, Any]:
     severity = "unknown"
     if ssh_brute_force_success:
         severity = "high"
-    elif hypothesis_count > 0 and not network_patterns:
+    elif rule_hypotheses and not network_patterns:
         severity = "high" if provider_count > 0 and hypothesis_count > 1 else "medium"
 
     has_authentication_events = any(

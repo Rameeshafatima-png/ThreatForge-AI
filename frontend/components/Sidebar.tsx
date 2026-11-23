@@ -3,10 +3,10 @@ import Link from "next/link";
 import { useRouter } from "next/router";
 
 const navigation = [
-  { label: "New investigation", href: "/", glyph: "＋" },
-  { label: "Workspace", href: "/workspace", glyph: "⌁" },
-  { label: "Casebook", href: "/history", glyph: "▤" },
-  { label: "Report", href: "/report", glyph: "▧" },
+  { label: "New investigation", href: "/", glyph: "＋", number: "01" },
+  { label: "Workspace", href: "/workspace", glyph: "⌁", number: "02" },
+  { label: "Casebook", href: "/history", glyph: "▤", number: "03" },
+  { label: "Report", href: "/report", glyph: "▧", number: "04" },
 ];
 
 export function Sidebar() {
@@ -42,41 +42,43 @@ export function Sidebar() {
         aria-current={active ? "page" : undefined}
         className={`nav-link ${mobile ? "nav-link-mobile" : ""} ${active ? "nav-link-active" : ""}`}
       >
+        <span className="nav-number">{item.number}</span>
         <span className="nav-glyph" aria-hidden="true">{item.glyph}</span>
         <span>{mobile && item.label === "New investigation" ? "New" : item.label}</span>
+        {active && <span className="nav-active-mark" />}
       </Link>
     );
   });
 
   return (
     <>
-      <aside className="desktop-sidebar">
-        <Link href="/" className="brand-link">
+      <aside className="desktop-sidebar tf-sidebar">
+        <Link href="/" className="brand-link tf-brand">
           <span className="brand-mark">TF</span>
-          <span>ThreatForge</span>
+          <span className="tf-brand-name">ThreatForge <small>AI SECURITY PLATFORM</small></span>
         </Link>
-        <p className="sidebar-caption">Investigation console</p>
+        <div className="tf-sidebar-rule" />
+        <p className="sidebar-caption">INVESTIGATION CONSOLE</p>
         <nav className="mt-5 space-y-1" aria-label="Primary navigation">
           {navLinks()}
         </nav>
-        <div className="mt-auto border-t border-forge-border pt-3">
-          <div className="flex items-center gap-2 px-2 py-2">
-            <div className="grid h-7 w-7 place-items-center rounded-full bg-forge-raised text-xs">A</div>
+        <div className="tf-sidebar-bottom">
+          <div className="tf-sidebar-status"><span className="tf-live-pulse" /> LOCAL ENVIRONMENT</div>
+          <div className="flex items-center gap-3 px-2 py-3">
+            <div className="tf-analyst-avatar">A</div>
             <div className="min-w-0">
-              <p className="truncate text-xs font-medium">Analyst Workspace</p>
-              <p className="text-[11px] text-forge-muted">Local session</p>
+              <p className="truncate text-xs font-semibold">Analyst Workspace</p>
+              <p className="text-[11px] text-forge-muted">Private session</p>
             </div>
           </div>
+          <p className="tf-sidebar-version">THREATFORGE / BUILD 01</p>
         </div>
       </aside>
-      <div className="mobile-navigation">
-        <Link href="/" className="brand-link">
-          <span className="brand-mark">TF</span>
-          <span>ThreatForge</span>
+      <div className="mobile-navigation tf-mobile-nav">
+        <Link href="/" className="brand-link tf-brand">
+          <span className="brand-mark">TF</span><span className="tf-brand-name">ThreatForge <small>AI SECURITY</small></span>
         </Link>
-        <nav className="mobile-navigation-links" aria-label="Primary navigation">
-          {navLinks(true)}
-        </nav>
+        <nav className="mobile-navigation-links" aria-label="Primary navigation">{navLinks(true)}</nav>
       </div>
     </>
   );
